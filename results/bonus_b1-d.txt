@@ -1,0 +1,12 @@
+[B1-d] NOT IN의 함정: 서브쿼리 결과에 NULL이 하나라도 있으면 결과가 0건이 된다
+======================================================================
+--        (wear_log.clothing_id는 NOT NULL이라 위 B1-c는 안전하지만, NULL 가능 컬럼이면 위험)  [SQLite 전용: FROM 없는 SELECT ... WHERE, MySQL은 FROM DUAL 필요]
+SELECT 'NOT IN (1, NULL)' AS expr, COUNT(*) AS rows_returned FROM (SELECT 1 WHERE 5 NOT IN (1, NULL))
+UNION ALL
+SELECT 'NOT IN (1, 2)',            COUNT(*)                   FROM (SELECT 1 WHERE 5 NOT IN (1, 2));
+----------------------------------------------------------------------
+expr             | rows_returned
+-----------------+--------------
+NOT IN (1, NULL) |             0
+NOT IN (1, 2)    |             1
+(2 rows)

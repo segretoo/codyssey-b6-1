@@ -1,0 +1,22 @@
+[B3-1] 지표① 착용당 비용(가격 ÷ 착용 횟수)이 가장 높은 옷 TOP 5 — "비싼데 안 입는 옷"
+======================================================================
+-- [SQLite 전용] 정수 나눗셈 방지를 위해 * 1.0 사용
+SELECT c.name AS clothing_name,
+       c.price,
+       COUNT(*) AS wear_count,
+       CAST(ROUND(c.price * 1.0 / COUNT(*)) AS INTEGER) AS cost_per_wear
+FROM clothing c
+INNER JOIN wear_log w ON w.clothing_id = c.clothing_id
+WHERE c.price IS NOT NULL
+GROUP BY c.clothing_id, c.name, c.price
+ORDER BY cost_per_wear DESC
+LIMIT 5;
+----------------------------------------------------------------------
+clothing_name |  price | wear_count | cost_per_wear
+--------------+--------+------------+--------------
+울 롱 코트    | 189000 |          1 |        189000
+경량 패딩     | 129000 |          1 |        129000
+폴라 니트     |  64000 |          1 |         64000
+코듀로이 팬츠 |  58000 |          1 |         58000
+트렌치 코트   | 139000 |          3 |         46333
+(5 rows)

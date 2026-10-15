@@ -1,0 +1,18 @@
+[Q07] LEFT JOIN · 보유 중이지만 착용 기록이 한 번도 없는 옷 (안 입는 옷 찾기)
+======================================================================
+SELECT c.clothing_id, c.name, m.nickname, c.purchased_at
+FROM clothing c
+LEFT JOIN wear_log w ON w.clothing_id = c.clothing_id
+INNER JOIN member m  ON m.member_id   = c.member_id
+WHERE w.wear_id IS NULL            -- 짝이 없는(=기록 없는) 옷만 남김
+  AND c.status = '보유'
+ORDER BY c.purchased_at;
+----------------------------------------------------------------------
+clothing_id | name            | nickname | purchased_at
+------------+-----------------+----------+-------------
+         35 | 레이어드 티     | 보리     | 2023-02-14  
+         10 | 스트라이프 니트 | 모아     | 2023-10-09  
+         27 | 토트백          | 소라     | 2024-08-09  
+         34 | 니트 원피스     | 보리     | 2025-11-25  
+         26 | 무스탕          | 소라     | 2025-12-05  
+(5 rows)

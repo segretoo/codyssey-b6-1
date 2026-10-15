@@ -1,0 +1,17 @@
+[Q14] DELETE · '처분'이면서 착용 기록이 없는 옷만 삭제 (기록이 있는 19번은 FK 때문에 지우면 에러 → 조건으로 제외)
+======================================================================
+DELETE FROM clothing
+WHERE status = '처분'
+  AND clothing_id NOT IN (SELECT clothing_id FROM wear_log);
+
+-- (확인) 삭제 후 남은 처분 옷과 전체 옷 개수 — 19번만 남고 총 36벌
+-- [DB별 문법] GROUP_CONCAT: MySQL도 동일, PostgreSQL은 STRING_AGG
+SELECT (SELECT COUNT(*) FROM clothing) AS total_clothing,
+       (SELECT GROUP_CONCAT(clothing_id) FROM clothing WHERE status = '처분') AS disposed_ids;
+----------------------------------------------------------------------
+OK — 4 row(s) affected
+
+total_clothing | disposed_ids
+---------------+-------------
+            36 | 19          
+(1 row)

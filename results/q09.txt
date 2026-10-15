@@ -1,0 +1,23 @@
+[Q09] 집계(COUNT + AVG + GROUP BY) · 카테고리별 옷 개수와 평균 가격 (가격 NULL은 AVG에서 자동 제외)
+======================================================================
+SELECT cat.name AS category,
+       COUNT(*) AS clothing_count,
+       CAST(ROUND(AVG(c.price)) AS INTEGER) AS avg_price
+FROM category cat
+INNER JOIN clothing c ON c.category_id = cat.category_id
+GROUP BY cat.category_id, cat.name
+ORDER BY clothing_count DESC, cat.category_id;
+----------------------------------------------------------------------
+category | clothing_count | avg_price
+---------+----------------+----------
+상의     |             12 |     43333
+하의     |              9 |     48444
+아우터   |              6 |    146500
+신발     |              4 |     84000
+원피스   |              2 |     70000
+가방     |              2 |    120000
+액세서리 |              2 |     30000
+모자     |              1 |     28000
+이너웨어 |              1 |     19900
+양말     |              1 |      9900
+(10 rows)

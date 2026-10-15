@@ -1,0 +1,24 @@
+[Q15] INDEX · 날짜 범위 조회가 잦은 wear_log.worn_on에 인덱스 생성 (적용 전/후 실행 계획 비교)
+======================================================================
+-- 적용 이유: 착용 기록은 계속 쌓이고 "최근 N일" 날짜 범위 조회가 가장 잦아서, 전체 스캔 대신 인덱스로 찾도록 worn_on에 건다.
+-- 참고: UNIQUE(clothing_id, worn_on) 인덱스는 clothing_id가 앞이라 worn_on 단독 검색에는 쓰이지 않는다.
+-- [SQLite 전용] EXPLAIN QUERY PLAN  ※ MySQL/PostgreSQL은 EXPLAIN
+EXPLAIN QUERY PLAN
+SELECT * FROM wear_log WHERE worn_on >= '2026-10-01';
+
+CREATE INDEX idx_wear_log_worn_on ON wear_log (worn_on);
+
+EXPLAIN QUERY PLAN
+SELECT * FROM wear_log WHERE worn_on >= '2026-10-01';
+----------------------------------------------------------------------
+id | parent | notused | detail       
+---+--------+---------+--------------
+ 2 |      0 |       0 | SCAN wear_log
+(1 row)
+
+OK
+
+id | parent | notused | detail                                                      
+---+--------+---------+-------------------------------------------------------------
+ 3 |      0 |       0 | SEARCH wear_log USING INDEX idx_wear_log_worn_on (worn_on>?)
+(1 row)

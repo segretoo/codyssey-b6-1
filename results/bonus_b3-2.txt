@@ -1,0 +1,15 @@
+[B3-2] 지표② 월별 착용 횟수 추이 (10월은 14일까지의 부분 집계)
+======================================================================
+-- [SQLite 전용] strftime('%Y-%m', ...)  ※ MySQL: DATE_FORMAT(worn_on, '%Y-%m')
+SELECT strftime('%Y-%m', worn_on) AS month,
+       COUNT(*)                   AS wear_count
+FROM wear_log
+GROUP BY strftime('%Y-%m', worn_on)
+ORDER BY month;
+----------------------------------------------------------------------
+month   | wear_count
+--------+-----------
+2026-08 |         12
+2026-09 |         37
+2026-10 |         44
+(3 rows)

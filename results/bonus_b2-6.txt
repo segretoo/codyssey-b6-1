@@ -1,0 +1,5 @@
+[B2-6] 같은 옷을 같은 날 두 번 기록 → 복합 UNIQUE 에러 / 고치는 법: 날짜를 바꾸거나, 이미 있는 기록이면 INSERT 대신 UPDATE
+======================================================================
+INSERT INTO wear_log (clothing_id, worn_on) VALUES (1, '2026-10-12');
+----------------------------------------------------------------------
+ERROR: UNIQUE constraint failed: wear_log.clothing_id, wear_log.worn_on

@@ -1,0 +1,22 @@
+[Q05] INNER JOIN · 모아(1번 회원)의 옷을 주인·카테고리 이름과 함께 조회 (3개 테이블 조인)
+======================================================================
+SELECT m.nickname, cat.name AS category, c.name AS clothing_name, c.color
+FROM clothing c
+INNER JOIN member   m   ON m.member_id    = c.member_id
+INNER JOIN category cat ON cat.category_id = c.category_id
+WHERE m.member_id = 1
+ORDER BY cat.category_id, c.clothing_id;
+----------------------------------------------------------------------
+nickname | category | clothing_name      | color 
+---------+----------+--------------------+-------
+모아     | 상의     | 오버핏 화이트 셔츠 | 화이트
+모아     | 상의     | 기모 맨투맨        | 그레이
+모아     | 상의     | 린넨 반팔 티       | 베이지
+모아     | 상의     | 스트라이프 니트    | 네이비
+모아     | 하의     | 와이드 데님 팬츠   | 블루  
+모아     | 하의     | 블랙 슬랙스        | 블랙  
+모아     | 아우터   | 울 롱 코트         | 카멜  
+모아     | 아우터   | 트렌치 코트        | 베이지
+모아     | 신발     | 화이트 스니커즈    | 화이트
+모아     | 가방     | 블랙 크로스백      | 블랙  
+(10 rows)

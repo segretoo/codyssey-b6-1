@@ -1,0 +1,18 @@
+[Q11] 집계(COUNT + GROUP BY) + 랭킹 · 가장 많이 입은 옷 TOP 5
+======================================================================
+SELECT c.name AS clothing_name,
+       COUNT(*) AS wear_count
+FROM wear_log w
+INNER JOIN clothing c ON c.clothing_id = w.clothing_id
+GROUP BY c.clothing_id, c.name
+ORDER BY wear_count DESC, c.clothing_id   -- 동점이면 id순으로 고정
+LIMIT 5;
+----------------------------------------------------------------------
+clothing_name      | wear_count
+-------------------+-----------
+오버핏 화이트 셔츠 |          7
+와이드 데님 팬츠   |          6
+블랙 슬랙스        |          5
+화이트 스니커즈    |          5
+조거 팬츠          |          4
+(5 rows)

@@ -1,0 +1,219 @@
+[B1-a] LEFT JOIN + IS NULL 방식
+======================================================================
+SELECT c.clothing_id, c.name
+FROM clothing c
+LEFT JOIN wear_log w ON w.clothing_id = c.clothing_id
+WHERE w.wear_id IS NULL AND c.status = '보유'
+ORDER BY c.clothing_id;
+----------------------------------------------------------------------
+clothing_id | name           
+------------+----------------
+         10 | 스트라이프 니트
+         26 | 무스탕         
+         27 | 토트백         
+         34 | 니트 원피스    
+         35 | 레이어드 티    
+(5 rows)
+
+
+[B1-b] NOT EXISTS 서브쿼리 방식
+======================================================================
+SELECT c.clothing_id, c.name
+FROM clothing c
+WHERE c.status = '보유'
+  AND NOT EXISTS (SELECT 1 FROM wear_log w WHERE w.clothing_id = c.clothing_id)
+ORDER BY c.clothing_id;
+----------------------------------------------------------------------
+clothing_id | name           
+------------+----------------
+         10 | 스트라이프 니트
+         26 | 무스탕         
+         27 | 토트백         
+         34 | 니트 원피스    
+         35 | 레이어드 티    
+(5 rows)
+
+
+[B1-c] NOT IN 서브쿼리 방식
+======================================================================
+SELECT c.clothing_id, c.name
+FROM clothing c
+WHERE c.status = '보유'
+  AND c.clothing_id NOT IN (SELECT clothing_id FROM wear_log)
+ORDER BY c.clothing_id;
+----------------------------------------------------------------------
+clothing_id | name           
+------------+----------------
+         10 | 스트라이프 니트
+         26 | 무스탕         
+         27 | 토트백         
+         34 | 니트 원피스    
+         35 | 레이어드 티    
+(5 rows)
+
+
+[B1-d] NOT IN의 함정: 서브쿼리 결과에 NULL이 하나라도 있으면 결과가 0건이 된다
+======================================================================
+--        (wear_log.clothing_id는 NOT NULL이라 위 B1-c는 안전하지만, NULL 가능 컬럼이면 위험)  [SQLite 전용: FROM 없는 SELECT ... WHERE, MySQL은 FROM DUAL 필요]
+SELECT 'NOT IN (1, NULL)' AS expr, COUNT(*) AS rows_returned FROM (SELECT 1 WHERE 5 NOT IN (1, NULL))
+UNION ALL
+SELECT 'NOT IN (1, 2)',            COUNT(*)                   FROM (SELECT 1 WHERE 5 NOT IN (1, 2));
+----------------------------------------------------------------------
+expr             | rows_returned
+-----------------+--------------
+NOT IN (1, NULL) |             0
+NOT IN (1, 2)    |             1
+(2 rows)
+
+
+[B2-1] 없는 옷(999번)에 착용 기록 넣기 → FK 에러 / 고치는 법: 먼저 clothing에 그 옷을 등록하거나 실제 있는 clothing_id를 사용
+======================================================================
+INSERT INTO wear_log (clothing_id, worn_on, occasion) VALUES (999, '2026-10-14', '데일리');
+----------------------------------------------------------------------
+ERROR: FOREIGN KEY constraint failed
+
+
+[B2-2] 없는 카테고리(99번)로 옷 등록 → FK 에러 / 고치는 법: 먼저 category에 추가하거나 실제 있는 category_id를 사용
+======================================================================
+INSERT INTO clothing (member_id, category_id, name, color, season) VALUES (1, 99, '유령 옷', '블랙', '사계절');
+----------------------------------------------------------------------
+ERROR: FOREIGN KEY constraint failed
+
+
+[B2-3] 옷이 있는 회원(1번) 삭제 → 자식 행이 참조 중이라 FK 에러 / 고치는 법: 자식 행(wear_log → clothing 순)을 먼저 지운 뒤 회원 삭제
+======================================================================
+DELETE FROM member WHERE member_id = 1;
+----------------------------------------------------------------------
+ERROR: FOREIGN KEY constraint failed
+
+
+[B2-4] 닉네임 없이 가입 → NOT NULL 에러 / 고치는 법: nickname 값을 함께 입력
+======================================================================
+INSERT INTO member (email) VALUES ('nonick@example.com');
+----------------------------------------------------------------------
+ERROR: NOT NULL constraint failed: member.nickname
+
+
+[B2-5] 이미 있는 이메일로 가입 → UNIQUE 에러 / 고치는 법: 다른 이메일 사용, 이미 가입한 회원이면 INSERT 대신 기존 행 조회/UPDATE
+======================================================================
+INSERT INTO member (email, nickname) VALUES ('moa@example.com', '복제모아');
+----------------------------------------------------------------------
+ERROR: UNIQUE constraint failed: member.email
+
+
+[B2-6] 같은 옷을 같은 날 두 번 기록 → 복합 UNIQUE 에러 / 고치는 법: 날짜를 바꾸거나, 이미 있는 기록이면 INSERT 대신 UPDATE
+======================================================================
+INSERT INTO wear_log (clothing_id, worn_on) VALUES (1, '2026-10-12');
+----------------------------------------------------------------------
+ERROR: UNIQUE constraint failed: wear_log.clothing_id, wear_log.worn_on
+
+
+[B2-7] 허용되지 않은 계절 값 → CHECK 에러 / 고치는 법: '여름', '봄가을', '겨울', '사계절' 중 하나로 입력
+======================================================================
+INSERT INTO clothing (member_id, category_id, name, color, season) VALUES (1, 1, '이상한 옷', '블랙', '장마철');
+----------------------------------------------------------------------
+ERROR: CHECK constraint failed: season IN ('여름', '봄가을', '겨울', '사계절')
+
+
+[B2-8] FK 검사를 끄면(PRAGMA) 고아 행이 들어가 버린다 → foreign_key_check로 발견 → 삭제해서 복구  [SQLite 전용 PRAGMA, MySQL은 SET FOREIGN_KEY_CHECKS = 0]
+======================================================================
+PRAGMA foreign_keys = OFF;
+INSERT INTO wear_log (clothing_id, worn_on) VALUES (999, '2026-10-14');
+PRAGMA foreign_key_check;
+DELETE FROM wear_log WHERE clothing_id = 999;
+PRAGMA foreign_keys = ON;
+PRAGMA foreign_key_check;
+----------------------------------------------------------------------
+OK
+
+OK — 1 row(s) affected
+
+table    | rowid | parent   | fkid
+---------+-------+----------+-----
+wear_log |    94 | clothing |    0
+(1 row)
+
+OK — 1 row(s) affected
+
+OK
+
+table | rowid | parent | fkid
+------+-------+--------+-----
+(0 rows)
+
+
+[B2-9] 착용 기록이 남아 있는 옷(19번 체크 셔츠)을 직접 삭제 → FK 에러 (queries.sql Q14가 NOT IN 조건을 둔 이유)
+======================================================================
+--        고치는 법: 자식(wear_log) 행을 먼저 지우거나, FK에 ON DELETE CASCADE를 설계 단계에서 지정
+DELETE FROM clothing WHERE clothing_id = 19;
+----------------------------------------------------------------------
+ERROR: FOREIGN KEY constraint failed
+
+
+[B3-1] 지표① 착용당 비용(가격 ÷ 착용 횟수)이 가장 높은 옷 TOP 5 — "비싼데 안 입는 옷"
+======================================================================
+-- [SQLite 전용] 정수 나눗셈 방지를 위해 * 1.0 사용
+SELECT c.name AS clothing_name,
+       c.price,
+       COUNT(*) AS wear_count,
+       CAST(ROUND(c.price * 1.0 / COUNT(*)) AS INTEGER) AS cost_per_wear
+FROM clothing c
+INNER JOIN wear_log w ON w.clothing_id = c.clothing_id
+WHERE c.price IS NOT NULL
+GROUP BY c.clothing_id, c.name, c.price
+ORDER BY cost_per_wear DESC
+LIMIT 5;
+----------------------------------------------------------------------
+clothing_name |  price | wear_count | cost_per_wear
+--------------+--------+------------+--------------
+울 롱 코트    | 189000 |          1 |        189000
+경량 패딩     | 129000 |          1 |        129000
+폴라 니트     |  64000 |          1 |         64000
+코듀로이 팬츠 |  58000 |          1 |         58000
+트렌치 코트   | 139000 |          3 |         46333
+(5 rows)
+
+
+[B3-2] 지표② 월별 착용 횟수 추이 (10월은 14일까지의 부분 집계)
+======================================================================
+-- [SQLite 전용] strftime('%Y-%m', ...)  ※ MySQL: DATE_FORMAT(worn_on, '%Y-%m')
+SELECT strftime('%Y-%m', worn_on) AS month,
+       COUNT(*)                   AS wear_count
+FROM wear_log
+GROUP BY strftime('%Y-%m', worn_on)
+ORDER BY month;
+----------------------------------------------------------------------
+month   | wear_count
+--------+-----------
+2026-08 |         12
+2026-09 |         37
+2026-10 |         44
+(3 rows)
+
+
+[B3-3] 지표③ 회원별 옷장 활용률 = 최근 30일 안에 입은 옷 수 ÷ 보유 옷 수
+======================================================================
+-- [SQLite 전용] date()
+SELECT m.nickname,
+       COUNT(DISTINCT c.clothing_id) AS owned,
+       COUNT(DISTINCT CASE WHEN w.worn_on >= date('2026-10-14', '-30 days') THEN c.clothing_id END) AS worn_recently,
+       ROUND(100.0 * COUNT(DISTINCT CASE WHEN w.worn_on >= date('2026-10-14', '-30 days') THEN c.clothing_id END)
+                   / COUNT(DISTINCT c.clothing_id), 1) AS utilization_pct
+FROM member m
+INNER JOIN clothing c ON c.member_id = m.member_id AND c.status = '보유'
+LEFT JOIN  wear_log w ON w.clothing_id = c.clothing_id
+GROUP BY m.member_id, m.nickname
+ORDER BY utilization_pct DESC, m.member_id;
+----------------------------------------------------------------------
+nickname | owned | worn_recently | utilization_pct
+---------+-------+---------------+----------------
+하늘     |     4 |             4 |           100.0
+나무     |     3 |             3 |           100.0
+해나     |     4 |             4 |           100.0
+모아     |    10 |             8 |            80.0
+별이     |     3 |             2 |            66.7
+지후     |     3 |             2 |            66.7
+다온     |     4 |             2 |            50.0
+소라     |     4 |             2 |            50.0
+보리     |     3 |             1 |            33.3
+(9 rows)

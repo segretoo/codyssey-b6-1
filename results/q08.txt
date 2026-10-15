@@ -1,0 +1,11 @@
+[Q08] LEFT JOIN · 아직 옷을 한 벌도 등록하지 않은 회원 찾기
+======================================================================
+SELECT m.member_id, m.nickname, m.created_at
+FROM member m
+LEFT JOIN clothing c ON c.member_id = m.member_id
+WHERE c.clothing_id IS NULL;
+----------------------------------------------------------------------
+member_id | nickname | created_at
+----------+----------+-----------
+       10 | 새벽     | 2026-09-30
+(1 row)

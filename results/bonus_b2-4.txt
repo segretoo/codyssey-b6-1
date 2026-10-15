@@ -1,0 +1,5 @@
+[B2-4] 닉네임 없이 가입 → NOT NULL 에러 / 고치는 법: nickname 값을 함께 입력
+======================================================================
+INSERT INTO member (email) VALUES ('nonick@example.com');
+----------------------------------------------------------------------
+ERROR: NOT NULL constraint failed: member.nickname

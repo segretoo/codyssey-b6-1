@@ -1,0 +1,23 @@
+[Q10] 집계(COUNT + SUM + GROUP BY + HAVING) · 보유 옷 구매금액 합계가 10만 원 이상인 회원
+======================================================================
+SELECT m.nickname,
+       COUNT(*)     AS owned_count,
+       SUM(c.price) AS total_price
+FROM member m
+INNER JOIN clothing c ON c.member_id = m.member_id
+WHERE c.status = '보유'
+GROUP BY m.member_id, m.nickname
+HAVING SUM(c.price) >= 100000     -- 그룹이 만들어진 뒤 거르는 조건은 WHERE가 아니라 HAVING
+ORDER BY total_price DESC;
+----------------------------------------------------------------------
+nickname | owned_count | total_price
+---------+-------------+------------
+모아     |          10 |      628000
+소라     |           4 |      501000
+하늘     |           4 |      325000
+나무     |           3 |      204000
+다온     |           4 |      176000
+해나     |           4 |      173900
+별이     |           3 |      170000
+지후     |           3 |      101000
+(8 rows)

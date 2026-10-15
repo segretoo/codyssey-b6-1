@@ -1,0 +1,5 @@
+[B2-2] 없는 카테고리(99번)로 옷 등록 → FK 에러 / 고치는 법: 먼저 category에 추가하거나 실제 있는 category_id를 사용
+======================================================================
+INSERT INTO clothing (member_id, category_id, name, color, season) VALUES (1, 99, '유령 옷', '블랙', '사계절');
+----------------------------------------------------------------------
+ERROR: FOREIGN KEY constraint failed

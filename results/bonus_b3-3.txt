@@ -1,0 +1,26 @@
+[B3-3] 지표③ 회원별 옷장 활용률 = 최근 30일 안에 입은 옷 수 ÷ 보유 옷 수
+======================================================================
+-- [SQLite 전용] date()
+SELECT m.nickname,
+       COUNT(DISTINCT c.clothing_id) AS owned,
+       COUNT(DISTINCT CASE WHEN w.worn_on >= date('2026-10-14', '-30 days') THEN c.clothing_id END) AS worn_recently,
+       ROUND(100.0 * COUNT(DISTINCT CASE WHEN w.worn_on >= date('2026-10-14', '-30 days') THEN c.clothing_id END)
+                   / COUNT(DISTINCT c.clothing_id), 1) AS utilization_pct
+FROM member m
+INNER JOIN clothing c ON c.member_id = m.member_id AND c.status = '보유'
+LEFT JOIN  wear_log w ON w.clothing_id = c.clothing_id
+GROUP BY m.member_id, m.nickname
+ORDER BY utilization_pct DESC, m.member_id;
+----------------------------------------------------------------------
+nickname | owned | worn_recently | utilization_pct
+---------+-------+---------------+----------------
+하늘     |     4 |             4 |           100.0
+나무     |     3 |             3 |           100.0
+해나     |     4 |             4 |           100.0
+모아     |    10 |             8 |            80.0
+별이     |     3 |             2 |            66.7
+지후     |     3 |             2 |            66.7
+다온     |     4 |             2 |            50.0
+소라     |     4 |             2 |            50.0
+보리     |     3 |             1 |            33.3
+(9 rows)

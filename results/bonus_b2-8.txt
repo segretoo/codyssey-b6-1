@@ -1,0 +1,25 @@
+[B2-8] FK 검사를 끄면(PRAGMA) 고아 행이 들어가 버린다 → foreign_key_check로 발견 → 삭제해서 복구  [SQLite 전용 PRAGMA, MySQL은 SET FOREIGN_KEY_CHECKS = 0]
+======================================================================
+PRAGMA foreign_keys = OFF;
+INSERT INTO wear_log (clothing_id, worn_on) VALUES (999, '2026-10-14');
+PRAGMA foreign_key_check;
+DELETE FROM wear_log WHERE clothing_id = 999;
+PRAGMA foreign_keys = ON;
+PRAGMA foreign_key_check;
+----------------------------------------------------------------------
+OK
+
+OK — 1 row(s) affected
+
+table    | rowid | parent   | fkid
+---------+-------+----------+-----
+wear_log |    94 | clothing |    0
+(1 row)
+
+OK — 1 row(s) affected
+
+OK
+
+table | rowid | parent | fkid
+------+-------+--------+-----
+(0 rows)

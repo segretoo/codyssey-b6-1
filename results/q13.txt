@@ -1,0 +1,22 @@
+[Q13] UPDATE · 구매 1년이 넘었는데 착용 기록이 0건인 보유 옷을 '처분' 상태로 변경 (NOT EXISTS 서브쿼리 + 변경 확인)
+======================================================================
+-- [SQLite 전용] date('2026-10-14', '-1 year')
+UPDATE clothing
+SET status = '처분'
+WHERE status = '보유'
+  AND purchased_at < date('2026-10-14', '-1 year')
+  AND NOT EXISTS (SELECT 1 FROM wear_log w WHERE w.clothing_id = clothing.clothing_id);
+
+-- (확인) 처분 상태인 옷 — 10, 27, 35번이 새로 바뀌고 19, 23번은 원래 처분 상태
+SELECT clothing_id, name, status FROM clothing WHERE status = '처분' ORDER BY clothing_id;
+----------------------------------------------------------------------
+OK — 3 row(s) affected
+
+clothing_id | name            | status
+------------+-----------------+-------
+         10 | 스트라이프 니트 | 처분  
+         19 | 체크 셔츠       | 처분  
+         23 | 캔버스 슈즈     | 처분  
+         27 | 토트백          | 처분  
+         35 | 레이어드 티     | 처분  
+(5 rows)

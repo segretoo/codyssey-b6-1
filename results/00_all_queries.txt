@@ -1,0 +1,328 @@
+[Q01] 기본 조회 · 가을에 입는 '봄가을' 옷 중 비싼 순 TOP 5 (WHERE + ORDER BY + LIMIT)
+======================================================================
+SELECT clothing_id, name, color, price
+FROM clothing
+WHERE season = '봄가을'
+  AND status = '보유'
+  AND price IS NOT NULL            -- NULL은 DB마다 정렬 위치가 달라서 미리 제외
+ORDER BY price DESC
+LIMIT 5;
+----------------------------------------------------------------------
+clothing_id | name        | color  |  price
+------------+-------------+--------+-------
+          7 | 트렌치 코트 | 베이지 | 139000
+         20 | 바람막이    | 그린   |  85000
+         37 | 데님 재킷   | 블루   |  78000
+         11 | 후드 집업   | 차콜   |  55000
+         32 | 치노 팬츠   | 베이지 |  53000
+(5 rows)
+
+
+[Q02] 기본 조회 · 이름에 '셔츠'가 들어간 옷을 최근 구매순으로 검색 (LIKE + ORDER BY)
+======================================================================
+SELECT clothing_id, name, color, purchased_at
+FROM clothing
+WHERE name LIKE '%셔츠%'
+ORDER BY purchased_at DESC;
+----------------------------------------------------------------------
+clothing_id | name               | color  | purchased_at
+------------+--------------------+--------+-------------
+         31 | 린넨 셔츠          | 화이트 | 2025-05-12  
+          1 | 오버핏 화이트 셔츠 | 화이트 | 2025-03-12  
+         19 | 체크 셔츠          | 레드   | 2022-04-01  
+(3 rows)
+
+
+[Q03] 기본 조회 · 최근 30일(기준일 2026-10-14) 착용 기록 최신 10건 (WHERE 날짜 범위 + LIMIT)
+======================================================================
+-- [SQLite 전용] date('2026-10-14', '-30 days')  ※ MySQL: DATE_SUB('2026-10-14', INTERVAL 30 DAY)
+SELECT wear_id, clothing_id, worn_on, occasion
+FROM wear_log
+WHERE worn_on >= date('2026-10-14', '-30 days')
+ORDER BY worn_on DESC, wear_id DESC
+LIMIT 10;
+----------------------------------------------------------------------
+wear_id | clothing_id | worn_on    | occasion
+--------+-------------+------------+---------
+     93 |          36 | 2026-10-13 | 데일리  
+     92 |          14 | 2026-10-13 | 데일리  
+     91 |          13 | 2026-10-13 | 운동    
+     90 |          12 | 2026-10-13 | 운동    
+     89 |           6 | 2026-10-13 | 데일리  
+     88 |          25 | 2026-10-12 | 데일리  
+     87 |          24 | 2026-10-12 | 데일리  
+     86 |          17 | 2026-10-12 | 출근    
+     85 |           7 | 2026-10-12 | 출근    
+     84 |           5 | 2026-10-12 | 출근    
+(10 rows)
+
+
+[Q04] 기본 조회 · 가격을 입력하지 않은 옷 찾기 (IS NULL — '= NULL'은 동작하지 않음)
+======================================================================
+SELECT clothing_id, name, purchased_at, status
+FROM clothing
+WHERE price IS NULL
+ORDER BY purchased_at;
+----------------------------------------------------------------------
+clothing_id | name            | purchased_at | status
+------------+-----------------+--------------+-------
+         19 | 체크 셔츠       | 2022-04-01   | 처분  
+         35 | 레이어드 티     | 2023-02-14   | 보유  
+         10 | 스트라이프 니트 | 2023-10-09   | 보유  
+          9 | 블랙 크로스백   | 2024-06-15   | 보유  
+(4 rows)
+
+
+[Q05] INNER JOIN · 모아(1번 회원)의 옷을 주인·카테고리 이름과 함께 조회 (3개 테이블 조인)
+======================================================================
+SELECT m.nickname, cat.name AS category, c.name AS clothing_name, c.color
+FROM clothing c
+INNER JOIN member   m   ON m.member_id    = c.member_id
+INNER JOIN category cat ON cat.category_id = c.category_id
+WHERE m.member_id = 1
+ORDER BY cat.category_id, c.clothing_id;
+----------------------------------------------------------------------
+nickname | category | clothing_name      | color 
+---------+----------+--------------------+-------
+모아     | 상의     | 오버핏 화이트 셔츠 | 화이트
+모아     | 상의     | 기모 맨투맨        | 그레이
+모아     | 상의     | 린넨 반팔 티       | 베이지
+모아     | 상의     | 스트라이프 니트    | 네이비
+모아     | 하의     | 와이드 데님 팬츠   | 블루  
+모아     | 하의     | 블랙 슬랙스        | 블랙  
+모아     | 아우터   | 울 롱 코트         | 카멜  
+모아     | 아우터   | 트렌치 코트        | 베이지
+모아     | 신발     | 화이트 스니커즈    | 화이트
+모아     | 가방     | 블랙 크로스백      | 블랙  
+(10 rows)
+
+
+[Q06] INNER JOIN · 최근 4일(2026-10-10~) 착용 기록에 옷 이름 붙여 보기
+======================================================================
+-- [SQLite 전용] date() 함수
+SELECT w.worn_on, c.name AS clothing_name, w.occasion
+FROM wear_log w
+INNER JOIN clothing c ON c.clothing_id = w.clothing_id
+WHERE w.worn_on >= date('2026-10-14', '-4 days')
+ORDER BY w.worn_on DESC, c.name;
+----------------------------------------------------------------------
+worn_on    | clothing_name      | occasion
+-----------+--------------------+---------
+2026-10-13 | 경량 패딩          | 데일리  
+2026-10-13 | 러닝화             | 운동    
+2026-10-13 | 울 롱 코트         | 데일리  
+2026-10-13 | 조거 팬츠          | 운동    
+2026-10-13 | 히트텍 이너        | 데일리  
+2026-10-12 | 블랙 슬랙스        | 출근    
+2026-10-12 | 오버핏 화이트 셔츠 | 출근    
+2026-10-12 | 코듀로이 팬츠      | 데일리  
+2026-10-12 | 트렌치 코트        | 출근    
+2026-10-12 | 폴라 니트          | 데일리  
+2026-10-12 | 플리츠 스커트      | 출근    
+2026-10-11 | 기모 맨투맨        | 데일리  
+2026-10-11 | 데님 재킷          | 약속    
+2026-10-11 | 러닝화             | 운동    
+2026-10-11 | 실버 반지          | 약속    
+2026-10-11 | 조거 팬츠          | 운동    
+2026-10-11 | 후드 집업          | 운동    
+2026-10-10 | 바람막이           | 데일리  
+2026-10-10 | 와이드 데님 팬츠   | 데일리  
+2026-10-10 | 카고 팬츠          | 데일리  
+2026-10-10 | 화이트 스니커즈    | 데일리  
+(21 rows)
+
+
+[Q07] LEFT JOIN · 보유 중이지만 착용 기록이 한 번도 없는 옷 (안 입는 옷 찾기)
+======================================================================
+SELECT c.clothing_id, c.name, m.nickname, c.purchased_at
+FROM clothing c
+LEFT JOIN wear_log w ON w.clothing_id = c.clothing_id
+INNER JOIN member m  ON m.member_id   = c.member_id
+WHERE w.wear_id IS NULL            -- 짝이 없는(=기록 없는) 옷만 남김
+  AND c.status = '보유'
+ORDER BY c.purchased_at;
+----------------------------------------------------------------------
+clothing_id | name            | nickname | purchased_at
+------------+-----------------+----------+-------------
+         35 | 레이어드 티     | 보리     | 2023-02-14  
+         10 | 스트라이프 니트 | 모아     | 2023-10-09  
+         27 | 토트백          | 소라     | 2024-08-09  
+         34 | 니트 원피스     | 보리     | 2025-11-25  
+         26 | 무스탕          | 소라     | 2025-12-05  
+(5 rows)
+
+
+[Q08] LEFT JOIN · 아직 옷을 한 벌도 등록하지 않은 회원 찾기
+======================================================================
+SELECT m.member_id, m.nickname, m.created_at
+FROM member m
+LEFT JOIN clothing c ON c.member_id = m.member_id
+WHERE c.clothing_id IS NULL;
+----------------------------------------------------------------------
+member_id | nickname | created_at
+----------+----------+-----------
+       10 | 새벽     | 2026-09-30
+(1 row)
+
+
+[Q09] 집계(COUNT + AVG + GROUP BY) · 카테고리별 옷 개수와 평균 가격 (가격 NULL은 AVG에서 자동 제외)
+======================================================================
+SELECT cat.name AS category,
+       COUNT(*) AS clothing_count,
+       CAST(ROUND(AVG(c.price)) AS INTEGER) AS avg_price
+FROM category cat
+INNER JOIN clothing c ON c.category_id = cat.category_id
+GROUP BY cat.category_id, cat.name
+ORDER BY clothing_count DESC, cat.category_id;
+----------------------------------------------------------------------
+category | clothing_count | avg_price
+---------+----------------+----------
+상의     |             12 |     43333
+하의     |              9 |     48444
+아우터   |              6 |    146500
+신발     |              4 |     84000
+원피스   |              2 |     70000
+가방     |              2 |    120000
+액세서리 |              2 |     30000
+모자     |              1 |     28000
+이너웨어 |              1 |     19900
+양말     |              1 |      9900
+(10 rows)
+
+
+[Q10] 집계(COUNT + SUM + GROUP BY + HAVING) · 보유 옷 구매금액 합계가 10만 원 이상인 회원
+======================================================================
+SELECT m.nickname,
+       COUNT(*)     AS owned_count,
+       SUM(c.price) AS total_price
+FROM member m
+INNER JOIN clothing c ON c.member_id = m.member_id
+WHERE c.status = '보유'
+GROUP BY m.member_id, m.nickname
+HAVING SUM(c.price) >= 100000     -- 그룹이 만들어진 뒤 거르는 조건은 WHERE가 아니라 HAVING
+ORDER BY total_price DESC;
+----------------------------------------------------------------------
+nickname | owned_count | total_price
+---------+-------------+------------
+모아     |          10 |      628000
+소라     |           4 |      501000
+하늘     |           4 |      325000
+나무     |           3 |      204000
+다온     |           4 |      176000
+해나     |           4 |      173900
+별이     |           3 |      170000
+지후     |           3 |      101000
+(8 rows)
+
+
+[Q11] 집계(COUNT + GROUP BY) + 랭킹 · 가장 많이 입은 옷 TOP 5
+======================================================================
+SELECT c.name AS clothing_name,
+       COUNT(*) AS wear_count
+FROM wear_log w
+INNER JOIN clothing c ON c.clothing_id = w.clothing_id
+GROUP BY c.clothing_id, c.name
+ORDER BY wear_count DESC, c.clothing_id   -- 동점이면 id순으로 고정
+LIMIT 5;
+----------------------------------------------------------------------
+clothing_name      | wear_count
+-------------------+-----------
+오버핏 화이트 셔츠 |          7
+와이드 데님 팬츠   |          6
+블랙 슬랙스        |          5
+화이트 스니커즈    |          5
+조거 팬츠          |          4
+(5 rows)
+
+
+[Q12] 서브쿼리 · 전체 옷 평균 가격보다 비싼 옷 (WHERE 안의 스칼라 서브쿼리)
+======================================================================
+SELECT clothing_id, name, price
+FROM clothing
+WHERE price > (SELECT AVG(price) FROM clothing)
+ORDER BY price DESC;
+----------------------------------------------------------------------
+clothing_id | name            |  price
+------------+-----------------+-------
+         26 | 무스탕          | 259000
+          6 | 울 롱 코트      | 189000
+          7 | 트렌치 코트     | 139000
+         14 | 경량 패딩       | 129000
+         27 | 토트백          | 120000
+         33 | 로퍼            | 110000
+         13 | 러닝화          |  99000
+         20 | 바람막이        |  85000
+          8 | 화이트 스니커즈 |  79000
+         37 | 데님 재킷       |  78000
+         34 | 니트 원피스     |  72000
+         15 | 플라워 원피스   |  68000
+(12 rows)
+
+
+[Q13] UPDATE · 구매 1년이 넘었는데 착용 기록이 0건인 보유 옷을 '처분' 상태로 변경 (NOT EXISTS 서브쿼리 + 변경 확인)
+======================================================================
+-- [SQLite 전용] date('2026-10-14', '-1 year')
+UPDATE clothing
+SET status = '처분'
+WHERE status = '보유'
+  AND purchased_at < date('2026-10-14', '-1 year')
+  AND NOT EXISTS (SELECT 1 FROM wear_log w WHERE w.clothing_id = clothing.clothing_id);
+
+-- (확인) 처분 상태인 옷 — 10, 27, 35번이 새로 바뀌고 19, 23번은 원래 처분 상태
+SELECT clothing_id, name, status FROM clothing WHERE status = '처분' ORDER BY clothing_id;
+----------------------------------------------------------------------
+OK — 3 row(s) affected
+
+clothing_id | name            | status
+------------+-----------------+-------
+         10 | 스트라이프 니트 | 처분  
+         19 | 체크 셔츠       | 처분  
+         23 | 캔버스 슈즈     | 처분  
+         27 | 토트백          | 처분  
+         35 | 레이어드 티     | 처분  
+(5 rows)
+
+
+[Q14] DELETE · '처분'이면서 착용 기록이 없는 옷만 삭제 (기록이 있는 19번은 FK 때문에 지우면 에러 → 조건으로 제외)
+======================================================================
+DELETE FROM clothing
+WHERE status = '처분'
+  AND clothing_id NOT IN (SELECT clothing_id FROM wear_log);
+
+-- (확인) 삭제 후 남은 처분 옷과 전체 옷 개수 — 19번만 남고 총 36벌
+-- [DB별 문법] GROUP_CONCAT: MySQL도 동일, PostgreSQL은 STRING_AGG
+SELECT (SELECT COUNT(*) FROM clothing) AS total_clothing,
+       (SELECT GROUP_CONCAT(clothing_id) FROM clothing WHERE status = '처분') AS disposed_ids;
+----------------------------------------------------------------------
+OK — 4 row(s) affected
+
+total_clothing | disposed_ids
+---------------+-------------
+            36 | 19          
+(1 row)
+
+
+[Q15] INDEX · 날짜 범위 조회가 잦은 wear_log.worn_on에 인덱스 생성 (적용 전/후 실행 계획 비교)
+======================================================================
+-- 적용 이유: 착용 기록은 계속 쌓이고 "최근 N일" 날짜 범위 조회가 가장 잦아서, 전체 스캔 대신 인덱스로 찾도록 worn_on에 건다.
+-- 참고: UNIQUE(clothing_id, worn_on) 인덱스는 clothing_id가 앞이라 worn_on 단독 검색에는 쓰이지 않는다.
+-- [SQLite 전용] EXPLAIN QUERY PLAN  ※ MySQL/PostgreSQL은 EXPLAIN
+EXPLAIN QUERY PLAN
+SELECT * FROM wear_log WHERE worn_on >= '2026-10-01';
+
+CREATE INDEX idx_wear_log_worn_on ON wear_log (worn_on);
+
+EXPLAIN QUERY PLAN
+SELECT * FROM wear_log WHERE worn_on >= '2026-10-01';
+----------------------------------------------------------------------
+id | parent | notused | detail       
+---+--------+---------+--------------
+ 2 |      0 |       0 | SCAN wear_log
+(1 row)
+
+OK
+
+id | parent | notused | detail                                                      
+---+--------+---------+-------------------------------------------------------------
+ 3 |      0 |       0 | SEARCH wear_log USING INDEX idx_wear_log_worn_on (worn_on>?)
+(1 row)

@@ -1,0 +1,16 @@
+[B1-a] LEFT JOIN + IS NULL 방식
+======================================================================
+SELECT c.clothing_id, c.name
+FROM clothing c
+LEFT JOIN wear_log w ON w.clothing_id = c.clothing_id
+WHERE w.wear_id IS NULL AND c.status = '보유'
+ORDER BY c.clothing_id;
+----------------------------------------------------------------------
+clothing_id | name           
+------------+----------------
+         10 | 스트라이프 니트
+         26 | 무스탕         
+         27 | 토트백         
+         34 | 니트 원피스    
+         35 | 레이어드 티    
+(5 rows)

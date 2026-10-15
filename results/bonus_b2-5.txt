@@ -1,0 +1,5 @@
+[B2-5] 이미 있는 이메일로 가입 → UNIQUE 에러 / 고치는 법: 다른 이메일 사용, 이미 가입한 회원이면 INSERT 대신 기존 행 조회/UPDATE
+======================================================================
+INSERT INTO member (email, nickname) VALUES ('moa@example.com', '복제모아');
+----------------------------------------------------------------------
+ERROR: UNIQUE constraint failed: member.email

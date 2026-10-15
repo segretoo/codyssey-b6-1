@@ -1,0 +1,6 @@
+[B2-9] 착용 기록이 남아 있는 옷(19번 체크 셔츠)을 직접 삭제 → FK 에러 (queries.sql Q14가 NOT IN 조건을 둔 이유)
+======================================================================
+--        고치는 법: 자식(wear_log) 행을 먼저 지우거나, FK에 ON DELETE CASCADE를 설계 단계에서 지정
+DELETE FROM clothing WHERE clothing_id = 19;
+----------------------------------------------------------------------
+ERROR: FOREIGN KEY constraint failed
